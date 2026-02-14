@@ -11,7 +11,7 @@ int main(){
     sync.register_hooks<Postation>();
     sync.register_hooks<Name>();
 
-    entt::registry& world = sync.get_world();
+    entt::registry* world = sync.get_world();
 
     auto entity = sync.create_entity();
 
