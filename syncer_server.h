@@ -44,8 +44,8 @@ public:
         return events;
     };
     
-    entt::registry& get_world(){
-        return *world;
+    entt::registry* get_world(){
+        return world;
     };
 
     bool initialized(){
