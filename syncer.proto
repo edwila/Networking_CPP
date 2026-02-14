@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package syncer;
+
+enum ChangeType {
+    ADDED = 0;
+    CHANGED = 1;
+    REMOVED = 2;
+}
+
+message NameComponent {
+    string value = 1;
+}
+
+message PostationComponent {
+    uint32 value = 1;
+}
+
+message ComponentUpdate {
+    ChangeType change_type = 1;
+    
+    oneof component_data {
+        NameComponent name = 2;
+        PostationComponent postation = 3;
+    }
+}
+
+message EntityUpdate {
+    uint32 entity_id = 1;
+    repeated ComponentUpdate updates = 2;
+}
+
+message SyncPackage {
+    uint64 frame = 1;
+    repeated EntityUpdate entity_updates = 2;
+}
