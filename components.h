@@ -12,17 +12,28 @@
 #include <iostream>
 #include <string>
 #include <cstring>
+#include <vector>
+#include <variant>
 
 constexpr size_t MAX_ENTITIES = 1000000; // 1 million entities for now
+
+template <typename T, typename... Args>
+void adder(entt::registry& world, entt::entity e, Args... a){
+    world.emplace_or_replace<T>(e, a...);
+}
 
 enum COMP_IDS : uint8_t { COMP_NET, COMP_NAME, COMP_POSTATION };
 
 struct Networked {
+    using self_type = Networked;
     static constexpr uint8_t COMP_ID = COMP_IDS::COMP_NET;
 };
 
 struct Name {
+    using self_type = Name;
     std::string value;
+
+    Name() : value("") {}
 
     Name(const std::string& str){
         value = str;
@@ -40,6 +51,7 @@ struct Name {
 };
 
 struct Postation {
+    using self_type = Postation;
     std::uint32_t packed;
 
     void set(std::uint32_t pos, uint16_t rot){
@@ -64,5 +76,49 @@ struct Postation {
 
     static constexpr uint8_t COMP_ID = COMP_IDS::COMP_POSTATION;
 };
+
+
+template <typename... Args>
+void add_upd(entt::registry& world, entt::entity e, uint8_t id, Args&&... a){
+    switch(id){
+        case COMP_IDS::COMP_NET: {
+            world.emplace_or_replace<Networked>(e);
+            break;
+        }
+        case COMP_IDS::COMP_NAME: {
+            world.emplace_or_replace<Name>(e, std::forward<Args>(a)...);
+            break;
+        }
+        case COMP_IDS::COMP_POSTATION: {
+            world.emplace_or_replace<Postation>(e, std::forward<Args>(a)...);
+            break;
+        }
+        default:
+            std::cout << "Unknown COMP_ID\n";
+            break;
+    }
+}
+
+inline void rem(entt::registry& world, entt::entity e, uint8_t id){
+    switch(id){
+        case COMP_IDS::COMP_NET: {
+            world.remove<Networked>(e);
+            break;
+        }
+        case COMP_IDS::COMP_NAME: {
+            world.remove<Name>(e);
+            break;
+        }
+        case COMP_IDS::COMP_POSTATION: {
+            world.remove<Postation>(e);
+            break;
+        }
+        default: {
+            std::cout << "Unknown COMP_ID when removing.\n";
+            break;
+        }
+    }
+}
+
 
 #endif

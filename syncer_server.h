@@ -15,20 +15,6 @@
 #include "network.h"
 
 class Syncer {
-private:
-    std::unique_ptr<entt::registry> world;
-    uint64_t frame = 0;
-
-    static constexpr uint8_t framerate = 1; // how many times this->update() is called per second
-
-    EventStream buffer;
-
-    network net;
-
-    std::thread updater;
-    
-    std::atomic<bool> running = true;
-
 public:
     explicit Syncer(entt::registry* _world){
 
@@ -51,6 +37,7 @@ public:
         this->running = false;
 
         this->updater.join();
+        this->listener.join();
 
         this->net.clean_up();
 
@@ -95,8 +82,76 @@ public:
         return world->create();
     };
 
+    void init(){
+        this->register_hooks<Postation>();
+        this->register_hooks<Name>();
+
+        // Start the thread of updating via this->update();
+
+        updater = std::thread(&Syncer::update, this);
+        listener = std::thread(&Syncer::listen, this);
+    }
+
+    void listen(){
+        this->net.process();
+    }
+
+    void update(){
+        // This way, we can simulate the framerate (1000 milliseconds in a second)
+        // so 1000/framerate gives us how many times to run a frame in a second
+
+        std::cout << "update\n";
+        while(this->running){
+            this->print_buffer();
+            this->increment_frame();
+
+            // Fire buffer.data to clients here
+
+            if(!buffer.data.empty()){
+                net.send_to_all(buffer.data);
+                buffer.reset();
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(1000/this->framerate));
+        }
+    }
+
+    template <typename T>
+    void register_hooks(){
+        assert(initialized());
+
+        world->on_construct<T>().template connect<&Syncer::on_con<T>>(this);
+        world->on_update<T>().template connect<&Syncer::on_upd<T>>(this);
+        world->on_destroy<T>().template connect<&Syncer::on_rem<T>>(this);
+    }
+
+    bool is_networked(entt::entity e){
+        assert(initialized());
+
+        return world->all_of<Networked>(e);
+    }
+
+    void print_buffer(){
+        // Print the buffer
+        buffer.out(std::cout);
+        std::cout << "frame: " << this->get_frame() << "\n";
+    }
+
 private:
     // buffer protocol: [ENTITY: 4 bytes] [COMP_ID: 4 bytes] [OPCODE: 1 byte] [DATA?: sizeof(COMP_ID)?]
+
+    std::unique_ptr<entt::registry> world;
+    uint64_t frame = 0;
+
+    static constexpr uint8_t framerate = 1; // how many times this->update() is called per second
+
+    EventStream buffer;
+
+    network net;
+
+    std::thread updater, listener;
+    
+    std::atomic<bool> running = true;
 
     template <typename T>
     void on_con(entt::registry& world, entt::entity e){
@@ -144,63 +199,6 @@ private:
         buffer.write(T::COMP_ID);
         buffer.write(OpCode::REMOVED);
     };
-
-public:
-    void init(){
-        this->register_hooks<Postation>();
-        this->register_hooks<Name>();
-
-        // Start the thread of updating via this->update();
-
-        updater = std::thread(&Syncer::update, this);
-    }
-
-    void update(){
-        // This way, we can simulate the framerate (1000 milliseconds in a second)
-        // so 1000/framerate gives us how many times to run a frame in a second
-
-        std::cout << "update\n";
-        while(this->running){
-            this->print_buffer();
-            this->increment_frame();
-
-            // Fire buffer.data to clients here
-
-            if(!buffer.data.empty()){
-                net.process();
-                buffer.reset();
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000/this->framerate));
-        }
-    }
-
-    template <typename T>
-    void register_hooks(){
-        assert(initialized());
-
-        world->on_construct<T>().template connect<&Syncer::on_con<T>>(this);
-        world->on_update<T>().template connect<&Syncer::on_upd<T>>(this);
-        world->on_destroy<T>().template connect<&Syncer::on_rem<T>>(this);
-    }
-
-    bool is_networked(entt::entity e){
-        assert(initialized());
-
-        return world->all_of<Networked>(e);
-    }
-
-    void yield(){
-        if(this->updater.joinable()){
-            this->updater.join();
-        }
-    }
-
-    void print_buffer(){
-        // Print the buffer
-        buffer.out(std::cout);
-        std::cout << "frame: " << this->get_frame() << "\n";
-    }
 };
 
 #endif

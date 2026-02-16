@@ -1,62 +1,94 @@
 #include "packets.h"
-#include <winsock2.h>
 #include <vector>
-#include <ws2tcpip.h>
 #include <iostream>
 #include <thread>
+#include <algorithm>
+#include "enet.h"
 
-constexpr static const char* PORT = "8080";
+constexpr static int PORT = 6767;
 
 constexpr static int MAX_PLAYERS = 10; // How many connections we'll allow
+
+struct client {
+    in6_addr host;
+    enet_uint16 port;
+    client* self;
+};
 
 // Create a class that'll handle all of the server's communication
 class network {
 private:
-    using bufferType = std::array<char, BUFFER_SIZE>;
-    int socket_descriptor;
-    addrinfo hints, *res;
-    std::vector<bufferType> buffers; // Index will be the player who's sending requests
     std::thread receiver;
-    std::vector<sockaddr*> connected_clients;
+    ENetHost* server;
+
+    bool running = false;
+
+    std::vector<client*> players; // Keep track of connected players for rendering purposes later
 public:
-    network(): socket_descriptor(socket(AF_INET, SOCK_DGRAM, 0)) {
-        assert(socket_descriptor != 0); // Ensure socket was initialized
+    network() {
+        assert(enet_initialize() == 0);
 
-        memset(&hints, 0, sizeof(hints)); // Will zero out the padding
+        players.reserve(MAX_PLAYERS);
         
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_DGRAM;
-        hints.ai_flags = AI_PASSIVE;
+        ENetAddress addy = {0};
 
-        getaddrinfo(NULL, PORT, &hints, &res);
+        addy.host = ENET_HOST_ANY;
+        addy.port = PORT;
 
-        buffers.resize(MAX_PLAYERS); // TODO: change to reserve and insert/remove as needed
+        server = enet_host_create(&addy, MAX_PLAYERS, 2, 0, 0);
 
-        bind(socket_descriptor, res->ai_addr, res->ai_addrlen);
+        assert(server != NULL);
+
+        running = true;
+
+        std::cout << "Server started.\n";
     }
 
     void process(){
-        // Listen, then accept() and populate buffer
+        // Accept stuff across the network boundary
 
         this->receiver = std::thread([this](){
-            sockaddr_storage user_info;
+            ENetEvent event;
+            while(this->running){
+                if(enet_host_service(server, &event, 1000) > 0){
+                    switch(event.type){
+                    case ENET_EVENT_TYPE_CONNECT: {
+                        client* nc = new client{event.peer->address.host, event.peer->address.port};
+                        nc->self = nc;
+                        event.peer->data = (void*)nc;
+                        players.emplace_back(nc);
+                        // Send a snapshot of the current world
+                        std::cout << "Player connected!\n";
+                        break;
+                    }
+                    case ENET_EVENT_TYPE_DISCONNECT: {
+                        players.erase(std::remove(players.begin(), players.end(), ((client*)event.peer->data)->self));
+                        delete ((client*)event.peer->data)->self;
+                        break;
+                    }
+                    case ENET_EVENT_TYPE_NONE: {
+                        break;
+                    }
+                }
+                }
+            }
 
-            socklen_t sz = sizeof(user_info);
-
-            int rec = recvfrom(socket_descriptor, buffers[0].data(), BUFFER_SIZE-1, 0, (struct sockaddr *)&user_info, &sz);
+            enet_host_destroy(server);
+            enet_deinitialize();
         });
     }
 
     void send_to_all(const std::vector<uint8_t>& data_buf){
         // Send data_buf to all connected clients
+        ENetPacket* packet = enet_packet_create((void*)data_buf.data(), data_buf.size(), ENET_PACKET_FLAG_RELIABLE);
 
-        //for(auto client : connected_clients){
-          //  sendto(socket_descriptor, (const char*)data_buf.data(), );
-        //}
+        enet_host_broadcast(this->server, 0, packet);
     }
 
     void clean_up(){
-        closesocket(socket_descriptor);
+        this->running = false;
+        enet_host_destroy(server);
+        enet_deinitialize();
 
         if(this->receiver.joinable()){
             this->receiver.join();
