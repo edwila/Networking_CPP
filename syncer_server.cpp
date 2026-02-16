@@ -2,30 +2,42 @@
 #include "packets.h"
 #include "syncer_server.h"
 
-
 int main(){
     // World initialized here
 
-    Syncer sync(nullptr);
+    WSAData wsaData;
+    WSAStartup(MAKEWORD(2, 2), &wsaData);
 
-    sync.register_hooks<Postation>();
-    sync.register_hooks<Name>();
+    std::cout << "HEADER\n";
 
-    entt::registry* world = sync.get_world();
+    Syncer syncer(nullptr);
 
-    auto entity = sync.create_entity();
+    std::cout << "AFTER\n";
 
-    sync.emplace<Networked, bool>(entity, true);
+    syncer.init();
 
-    sync.emplace<Postation, uint32_t>(entity, 0xFFFFFFFF);
+    std::cout << "INIT\n";
 
-    sync.emplace<Name, std::string>(entity, "Ismail");
+    entt::registry& world = syncer.get_world();
 
-    sync.create_init_package();
+    auto other_entity = syncer.create_entity();
 
-    std::cout << "\nPress ENTER to exit...\n";
+    auto entity = syncer.create_entity();
 
-    std::cin.get();
+    syncer.add_tag<Networked>(entity);
+
+    syncer.emplace<Postation, uint32_t>(entity, 0xFFFFFFFF);
+
+    syncer.emplace<Name, std::string>(entity, "Ismail");
+
+    syncer.get_world().emplace_or_replace<Name>(entity, "genscript");
+
+    std::string user_entry;
+
+    while(user_entry != "1"){
+        std::cout << "Option: ";
+        std::cin >> user_entry;
+    }
     
     return 0;
 }

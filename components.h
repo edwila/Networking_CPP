@@ -11,19 +11,58 @@
 #include <entt/entt.hpp>
 #include <iostream>
 #include <string>
+#include <cstring>
+
+constexpr size_t MAX_ENTITIES = 1000000; // 1 million entities for now
+
+enum COMP_IDS : uint8_t { COMP_NET, COMP_NAME, COMP_POSTATION };
 
 struct Networked {
-    bool value;
+    static constexpr uint8_t COMP_ID = COMP_IDS::COMP_NET;
 };
 
 struct Name {
     std::string value;
+
+    Name(const std::string& str){
+        value = str;
+    }
+
+    std::string get(){
+        return value;
+    }
+
+    size_t get_size() const {
+        return sizeof(value);
+    }
+
+    static constexpr uint8_t COMP_ID = COMP_IDS::COMP_NAME;
 };
 
 struct Postation {
-    uint32_t value;
-};
+    std::uint32_t packed;
 
-// Will register the hooks to the component (on_construct, on_update, and on_destroy)
+    void set(std::uint32_t pos, uint16_t rot){
+        packed = (rot & 0x1FF) | (pos << 9);
+    }
+
+    std::uint32_t get(){
+        return packed;
+    }
+
+    uint32_t get_position() const {
+        return (packed >> 9);
+    }
+
+    uint16_t get_rotation() const {
+        return (packed & 0x1FF);
+    }
+
+    size_t get_size() const {
+        return sizeof(packed);
+    }
+
+    static constexpr uint8_t COMP_ID = COMP_IDS::COMP_POSTATION;
+};
 
 #endif
