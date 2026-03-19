@@ -15,6 +15,7 @@ network::network() {
 };
 
 void network::process(){
+    running = true;
     ENetAddress addy = {0};
     enet_address_set_host(&addy, "127.0.0.1");
     addy.port = PORT;

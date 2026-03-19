@@ -16,6 +16,8 @@ int main(){
         std::cin >> user_entry;
         if(user_entry == "disconnect"){
             syncer.disconnect();
+        } else if(user_entry == "reconnect"){
+            syncer.init(); // Typically should be something like "syncer.connect()" but since the init() only calls net.process(), this is fine
         }
     }
     
