@@ -32,10 +32,6 @@ void network::process(Syncer* sync){
                     players[entt::to_integral(plr)] = nc;
                     // Sends a snapshot of the current world here
                     std::cout << "Player connected! Assigned entity ID: " << entt::to_integral(plr) << "\n";
-                    std::cout << "Current player list:\n";
-                    for(const auto& pair : players){
-                        std::cout << "entity ID: " << pair.first << " = " << pair.second << "\n"; // pair.second = mem address (should be fine for now)
-                    }
                     break;
                 }
                 case ENET_EVENT_TYPE_DISCONNECT: {
