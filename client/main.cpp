@@ -11,15 +11,17 @@ int main(){
 
     std::string user_entry;
 
-    while(user_entry != "1"){
+    while(user_entry != "exit"){
         std::cout << "Option: ";
         std::cin >> user_entry;
         if(user_entry == "disconnect"){
             syncer.disconnect();
-        } else if(user_entry == "reconnect"){
-            syncer.init(); // Typically should be something like "syncer.connect()" but since the init() only calls net.process(), this is fine
+        } else if(user_entry == "connect"){
+            syncer.connect();
         }
     }
+
+    syncer.clean_up();
     
     return 0;
 }

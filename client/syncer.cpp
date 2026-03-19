@@ -16,6 +16,14 @@ void Syncer::disconnect(){
     this->net.disconnect();
 };
 
+void Syncer::connect(){
+    if(net.is_connected()){
+        std::cout << "Already connected to a server!\n";
+    } else{
+        net.connect();
+    }
+};
+
 void Syncer::clean_up(){
     this->running = false;
     this->updater.join();

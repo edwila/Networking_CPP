@@ -10,7 +10,7 @@ int main(){
 
     std::string user_entry;
 
-    while(user_entry != "1"){
+    while(user_entry != "exit"){
         std::cout << "Option: ";
         std::cin >> user_entry;
 
@@ -30,10 +30,10 @@ int main(){
             syncer.emplace<Name, std::string>(entity, "Ismail");
 
             syncer.get_world().emplace_or_replace<Name>(entity, "genscript");
-        } else if(user_entry == "exit"){
-            syncer.clean_up();
         }
     }
+
+    syncer.clean_up();
     
     return 0;
 }
