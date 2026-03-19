@@ -9,8 +9,8 @@
 #include <algorithm>
 #include "../shared/enet.h"
 
-constexpr static int PORT = 6767;
-constexpr static int MAX_PLAYERS = 10;
+constexpr static uint32_t PORT = 6767;
+constexpr static uint8_t MAX_PLAYERS = 10;
 
 class Syncer;
 
@@ -21,18 +21,21 @@ struct client {
     client* self;
 };
 
+typedef std::unordered_map<uint32_t, client*> player_list;
+
 class network {
 public:
     network();
     void process(Syncer* sync);
     void send_to_all(const std::vector<uint8_t>& data_buf);
     void clean_up();
+    player_list get_players() const;
     ~network();
 private:
     std::thread receiver;
     ENetHost* server;
     bool running = false;
-    std::unordered_map<uint32_t, client*> players; // Keep track of connected players for rendering and broadcasting purposes later
+    player_list players; // Keep track of connected players for rendering and broadcasting purposes later
     // key = entityID of the Player
     // value = client class
 };

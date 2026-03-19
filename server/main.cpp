@@ -30,6 +30,22 @@ int main(){
             syncer.emplace<Name, std::string>(entity, "Ismail");
 
             syncer.get_world().emplace_or_replace<Name>(entity, "genscript");
+        } else if(user_entry == "playerlist"){
+            // print the playerlist
+            player_list players = syncer.get_players();
+
+            std::cout << "Player list:\n";
+
+            for(auto const& entry : players){
+                char str_addr[INET6_ADDRSTRLEN];
+                client* c = (client*)entry.second;
+
+                if(inet_ntop(AF_INET6, &(c->host), str_addr, INET6_ADDRSTRLEN) != nullptr){
+                    std::cout << "[" << entry.first << "]: " << str_addr << "\n";
+                } else{
+                    std::cout << "[" << entry.first << "]: " << entry.second << "\n";
+                }
+            }
         }
     }
 

@@ -61,6 +61,10 @@ void network::process(Syncer* sync){
     });
 };
 
+std::unordered_map<uint32_t, client*> network::get_players() const {
+    return this->players;
+};
+
 void network::send_to_all(const std::vector<uint8_t>& data_buf){
     enet_host_broadcast(this->server, 0, enet_packet_create((void*)data_buf.data(), data_buf.size(), ENET_PACKET_FLAG_RELIABLE));
 };

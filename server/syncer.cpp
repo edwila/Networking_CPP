@@ -78,7 +78,7 @@ void Syncer::update(){
             buffer.reset();
         }
         this->increment_frame();
-        
+
         std::this_thread::sleep_for(std::chrono::milliseconds(1000/this->framerate));
     }
 };
@@ -86,6 +86,10 @@ void Syncer::update(){
 bool Syncer::is_networked(entt::entity e){
     assert(initialized());
     return world->all_of<Networked>(e);
+};
+
+player_list Syncer::get_players() const {
+    return this->net.get_players();
 };
 
 void Syncer::print_buffer(){

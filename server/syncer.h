@@ -27,6 +27,8 @@ public:
     entt::registry& get_world();
     bool initialized();
 
+    player_list get_players() const;
+
     template <typename T, typename K>
     void emplace(const entt::entity& e, const K& value){
         assert(initialized());

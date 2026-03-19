@@ -34,7 +34,7 @@ void network::connect(int counter){
         std::cout << "Connection successful.\n";
         connected = true;
     } else {
-        if(counter == MAX_ATTEMPTS){
+        if(counter >= MAX_ATTEMPTS){
             std::cout << "Attempted to re-establish connection " << counter << " times. Please check your network and try again.\n";
             enet_peer_reset(peer);
             return;
