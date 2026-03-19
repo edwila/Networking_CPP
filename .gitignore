@@ -1,0 +1,23 @@
+# CMake build folders and cache
+build/
+out/
+protobuf-33.5/
+CMakeCache.txt
+CMakeFiles/
+
+# Compiled executables and objects
+*.exe
+*.obj
+*.o
+*.dll
+*.lib
+*.a
+
+# IDE folders (Visual Studio, VS Code, etc.)
+.vs/
+.vscode/
+*.user
+
+# Package managers
+vcpkg/
+vcpkg_installed/
