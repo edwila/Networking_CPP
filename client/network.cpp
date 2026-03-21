@@ -19,9 +19,9 @@ void network::init(){
     assert(client != NULL);
 }
 
-void network::connect(int counter){
+void network::connect(std::string& hostIP, int counter){
     ENetAddress addy = {0};
-    enet_address_set_host(&addy, "127.0.0.1");
+    enet_address_set_host(&addy, hostIP.data());
     addy.port = PORT;
 
     peer = enet_host_connect(client, &addy, 2, 0);
@@ -41,7 +41,7 @@ void network::connect(int counter){
         }
         std::cout << "Connection failed. Attempting again... (" << counter << "/" << MAX_ATTEMPTS << ")\n";
         enet_peer_reset(peer);
-        return connect(counter++);
+        return connect(hostIP, counter++);
     }
 };
 
@@ -70,7 +70,23 @@ void network::process(){
                             break;
                         }
                         case ENET_EVENT_TYPE_DISCONNECT: {
-                            std::cout << "\nServer disconnected.\n>> ";
+                            enet_uint32 dc_type = event.data;
+                            switch (dc_type) {
+                                default:
+                                case 0: {
+                                    std::cout << "\nLost connection to the server...\n>> ";
+                                    // todo: attempt reconnection here
+                                    break;
+                                }
+                                case 1: {
+                                    std::cout << "\nYou've been kicked from the game!\n>> ";
+                                    break;
+                                }
+                            }
+
+                            connected = false;
+                            peer = nullptr;
+
                             //running = false;
                             break;
                         }
@@ -79,10 +95,14 @@ void network::process(){
                     std::cout << "Error with ENet service.\n";
                     //running = false;
                 }
+            } else {
+                std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
 
-        disconnect();
+        if(connected){
+            disconnect();
+        }
     });
 };
 
@@ -91,32 +111,27 @@ bool network::is_running() const {
 }
 
 void network::disconnect(){
-    std::cout << "Ended connection.\n";
-    enet_peer_disconnect(peer, 0);
+    if(peer){
+        std::cout << "Ended connection.\n";
+        enet_peer_disconnect(peer, 0);
 
-    connected = false;
+        enet_host_flush(client);
 
-    ENetEvent event;
-        
-    while (enet_host_service(client, &event, 5000) > 0) {
-        switch (event.type) {
-            case ENET_EVENT_TYPE_RECEIVE:
-                enet_packet_destroy(event.packet);
-                break;
-            case ENET_EVENT_TYPE_DISCONNECT:
-                std::cout << "Disconnect succeeded.\n";
-                return;
-        }
+        peer = nullptr;
+        connected = false;
     }
 };
 
 void network::clean_up(){
     running = false;
-    disconnect();
-    enet_host_destroy(client);
-    enet_deinitialize();
 
     if(receiver.joinable()) receiver.join();
+
+    if(client){
+        enet_host_destroy(client);
+        client = nullptr;
+    }
+    enet_deinitialize();
 
     std::cout << "Network process joined successfully.\n";
 };

@@ -20,7 +20,7 @@ public:
     void set_frame(const uint64_t& fr);
     entt::registry& get_world();
     bool initialized();
-    void connect();
+    void connect(std::string& hostIP);
 
     template <typename T, typename K>
     void emplace(const entt::entity& e, const K& value){

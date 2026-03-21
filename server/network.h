@@ -23,6 +23,18 @@ struct client {
     ENetPeer* peer;
 };
 
+// Struct to contain information about being kicked. Can be templated for different types of disconnects, leaving this as-is for simplicity
+struct dc_packet {
+    uint8_t dtype; // disconnection type
+
+    void* metadata; // will be cast to the specific packet depending on dtype 
+    size_t metadata_len;
+};
+
+struct kick_packet {
+    std::string reason;
+};
+
 typedef std::unordered_map<uint32_t, client*> player_list;
 
 class network {
@@ -30,8 +42,9 @@ public:
     network();
     void process(Syncer* sync);
     void send_to_all(EventStream& data_buf_obj, bool use_mutex = false);
+    void send_to_all(std::vector<uint8_t>& data_buf_obj);
     void clean_up();
-    void disconnect(ENetPeer* peer);
+    void disconnect(ENetPeer* peer, uint8_t reason = 0);
     player_list get_players() const;
     ~network();
 private:

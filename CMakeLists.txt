@@ -20,6 +20,8 @@ add_executable(syncer_client ${CLIENT_SOURCES})
 # 4. Link everything together
 if(WIN32)
     # Link shared_lib (which contains EnTT) and the Windows networking libraries
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
+
     target_link_libraries(syncer_server PRIVATE shared_lib ws2_32 winmm)
     target_link_libraries(syncer_client PRIVATE shared_lib ws2_32 winmm)
 else()

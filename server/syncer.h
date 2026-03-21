@@ -66,7 +66,7 @@ public:
 private:
     // buffer protocol: [ENTITY: 4 bytes] [COMP_ID: 4 bytes] [OPCODE: 1 byte] [DATA?: sizeof(COMP_ID)?]
     std::shared_ptr<entt::registry> world;
-    uint64_t frame = 0;
+    frame_tracker frame;
     static constexpr uint8_t framerate = 1; // how many times this->update() is called per second
     EventStream buffer;
     network net;
@@ -74,52 +74,36 @@ private:
     std::atomic<bool> running = true;
 
     template <typename T>
-    void on_con(entt::registry& world, entt::entity e){
-        buffer.write(e);
-        buffer.write(T::COMP_ID);
-        buffer.write(OpCode::ADDED);
+    void con_upd(entt::registry& world, entt::entity e, OpCode op){
         const auto& comp = world.get<T>(e);
 
         if constexpr (T::COMP_ID == COMP_IDS::COMP_NAME){
+            std::vector<uint8_t> payload;
             const std::string& name = comp.value;
             uint8_t len = static_cast<uint8_t>(name.length());
 
-            buffer.write(len);
-
-            for(auto c : name){
-                buffer.write(c);
-            }
+            payload.reserve(len+1);
+            payload.emplace_back(len);
+            payload.insert(payload.end(), name.begin(), name.end());
+            buffer.write_event(e, T::COMP_ID, op, payload.data(), payload.size(), true);
         } else{
-            buffer.write(comp);
+            buffer.write_event(e, T::COMP_ID, op, &comp, sizeof(T), true);
         }
+    }
+
+    template <typename T>
+    void on_con(entt::registry& world, entt::entity e){
+        con_upd<T>(world, e, OpCode::ADDED);
     };
 
     template <typename T>
     void on_upd(entt::registry& world, entt::entity e){
-        buffer.write(e);
-        buffer.write(T::COMP_ID);
-        buffer.write(OpCode::CHANGED);
-        const auto& comp = world.get<T>(e);
-
-        if constexpr (T::COMP_ID == COMP_IDS::COMP_NAME){
-            const std::string& name = comp.value;
-            uint8_t len = static_cast<uint8_t>(name.length());
-
-            buffer.write(len);
-
-            for(auto c : name){
-                buffer.write(c);
-            }
-        } else{
-            buffer.write(comp);
-        }
+        con_upd<T>(world, e, OpCode::CHANGED);
     };
 
     template <typename T>
     void on_rem(entt::registry& world, entt::entity e){
-        buffer.write(e);
-        buffer.write(T::COMP_ID);
-        buffer.write(OpCode::REMOVED);
+        buffer.write_event(e, T::COMP_ID, OpCode::REMOVED, nullptr, 0, true);
     };
 };
 

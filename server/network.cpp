@@ -17,8 +17,9 @@ network::network() {
     std::cout << "Server started.\n";
 };
 
-void network::disconnect(ENetPeer* peer){
-    enet_peer_disconnect_now(peer, 0);
+void network::disconnect(ENetPeer* peer, uint8_t reason){
+    // TODO: add a check where if reason == 1 (kicked), send a packet informing them they are kicked, then actually call enet_peer_disconnect_later(peer, reason)
+    enet_peer_disconnect(peer, reason);
 };
 
 void network::process(Syncer* sync){
@@ -57,9 +58,6 @@ void network::process(Syncer* sync){
                 }
             }
         }
-
-        enet_host_destroy(server);
-        enet_deinitialize();
     });
 };
 
@@ -67,11 +65,15 @@ std::unordered_map<uint32_t, client*> network::get_players() const {
     return players;
 };
 
+void network::send_to_all(std::vector<uint8_t>& data_buf_obj){
+    enet_host_broadcast(server, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
+};
+
 void network::send_to_all(EventStream& data_buf_obj, bool use_mutex){
     if(use_mutex){
         data_buf_obj.lock();
     }
-    enet_host_broadcast(server, 0, enet_packet_create((void*)data_buf_obj.data.data(), data_buf_obj.data.size(), ENET_PACKET_FLAG_RELIABLE));
+    this->send_to_all(data_buf_obj.data);
     if(use_mutex){
         data_buf_obj.unlock();
     }
@@ -79,10 +81,14 @@ void network::send_to_all(EventStream& data_buf_obj, bool use_mutex){
 
 void network::clean_up(){
     running = false;
-    enet_host_destroy(server);
-    enet_deinitialize();
 
     if(receiver.joinable()) receiver.join();
+
+    if(server){
+        enet_host_destroy(server);
+        server = nullptr;
+    }
+    enet_deinitialize();
 
     std::cout << "Network process joined successfully.\n";
 };

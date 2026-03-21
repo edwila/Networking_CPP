@@ -3,7 +3,7 @@
 Syncer::Syncer(std::shared_ptr<entt::registry> _world)
     : world(_world ? _world : std::make_shared<entt::registry>())
 {
-    
+    buffer.track(&frame);
 };
 
 Syncer::~Syncer(){
@@ -22,11 +22,11 @@ void Syncer::clean_up(){
 };
 
 void Syncer::increment_frame(){
-    frame++;
+    frame.frame++;
 };
 
 uint64_t Syncer::get_frame() const {
-    return frame;
+    return frame.frame;
 };
 
 entt::registry& Syncer::get_world(){
@@ -74,11 +74,12 @@ void Syncer::update(){
         // Fire buffer.data to clients here
         if(!buffer.data.empty() && buffer.attempt_lock()){ // This will attempt to lock the mutex. It wont block the updater thread, however.
             // If we lock successfully, then we have the mutex so we can just send to all and clear without the use of a mutex (second arg)
+            std::vector<uint8_t> payload_clone = buffer.clone();
             print_buffer();
-            net.send_to_all(buffer);
             buffer.reset();
-
             buffer.unlock(); // TODO: Change to unique_lock (maybe use std::defer_lock)
+
+            net.send_to_all(payload_clone);
         }
 
         increment_frame();
@@ -101,7 +102,7 @@ player_list Syncer::get_players() const {
 void Syncer::kick(uint32_t plr){
     client* data = get_players()[plr];
 
-    net.disconnect(data->peer);
+    net.disconnect(data->peer, 1);
 }
 
 void Syncer::print_buffer(){

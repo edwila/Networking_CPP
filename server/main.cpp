@@ -36,12 +36,17 @@ int main(){
         } else if(user_entry == "kick"){
             uint32_t peer_name;
             std::cin >> peer_name;
+            std::getline(std::cin, user_entry);
+
+            user_entry = user_entry.length() > 0 ? user_entry : "No reason provided.";
 
             player_list players = syncer.get_players();
             if(players.find(peer_name) == players.end()){
                 std::cout << "Please provide a valid entity ID for the player to kick.\n";
                 continue;
             }
+
+            std::cout << "Kicking " << peer_name << " with reason: " << user_entry << "\n";
 
             syncer.kick(peer_name);
         } else if(user_entry == "playerlist"){

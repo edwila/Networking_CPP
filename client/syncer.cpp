@@ -16,11 +16,11 @@ void Syncer::disconnect(){
     net.disconnect();
 };
 
-void Syncer::connect(){
+void Syncer::connect(std::string& hostIP){
     if(net.is_connected()){
         std::cout << "Already connected to a server!\n";
     } else{
-        net.connect();
+        net.connect(hostIP);
     }
 };
 

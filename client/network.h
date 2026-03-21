@@ -15,7 +15,7 @@ public:
     void init();
     void process();
     void clean_up();
-    void connect(int counter = 0); // Uses counter to recursively call itself if it fails up to MAX_ATTEMPTS times
+    void connect(std::string& hostIP, int counter = 0); // Uses counter to recursively call itself if it fails up to MAX_ATTEMPTS times
     void disconnect();
     bool is_connected() const;
     bool is_running() const;
