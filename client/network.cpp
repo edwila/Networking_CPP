@@ -6,7 +6,7 @@
 network::network() {
     assert(enet_initialize() == 0);
 
-    this->init();
+    init();
 
     std::cout << "Client started.\n";
 };
@@ -39,9 +39,9 @@ void network::connect(int counter){
             enet_peer_reset(peer);
             return;
         }
-        std::cout << "Connection failed. Attempting again... (" << counter << "/" << MAX_ATTEMPTS << ")";
+        std::cout << "Connection failed. Attempting again... (" << counter << "/" << MAX_ATTEMPTS << ")\n";
         enet_peer_reset(peer);
-        return this->connect(counter++);
+        return connect(counter++);
     }
 };
 
@@ -50,24 +50,30 @@ bool network::is_connected() const {
 };
 
 void network::process(){
-    this->receiver = std::thread([this]() {
+    receiver = std::thread([this]() {
         ENetEvent event;
 
-        while (this->running) {
+        while (running) {
             if(connected){
                 int serviceResult = enet_host_service(client, &event, 1000);
 
                 if (serviceResult > 0) {
                     switch (event.type) {
-                        case ENET_EVENT_TYPE_RECEIVE:
-                            std::cout << "Packet received: " << event.packet->dataLength << " bytes\n";
+                        case ENET_EVENT_TYPE_RECEIVE: {
+                            std::cout << "\nPacket received: " << event.packet->dataLength << " bytes\n";
+                            uint8_t* data_ptr = event.packet->data;
+                            for(size_t i = 0; i < event.packet->dataLength; i++){
+                                std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                            }
+                            std::cout << "\n>> ";
                             enet_packet_destroy(event.packet);
                             break;
-
-                        case ENET_EVENT_TYPE_DISCONNECT:
-                            std::cout << "Server disconnected.\n";
-                            //this->running = false;
+                        }
+                        case ENET_EVENT_TYPE_DISCONNECT: {
+                            std::cout << "\nServer disconnected.\n>> ";
+                            //running = false;
                             break;
+                        }
                     }
                 } else if (serviceResult < 0) {
                     std::cout << "Error with ENet service.\n";
@@ -92,7 +98,7 @@ void network::disconnect(){
 
     ENetEvent event;
         
-    while (enet_host_service(this->client, &event, 5000) > 0) {
+    while (enet_host_service(client, &event, 5000) > 0) {
         switch (event.type) {
             case ENET_EVENT_TYPE_RECEIVE:
                 enet_packet_destroy(event.packet);
@@ -105,18 +111,16 @@ void network::disconnect(){
 };
 
 void network::clean_up(){
-    this->running = false;
+    running = false;
     disconnect();
     enet_host_destroy(client);
     enet_deinitialize();
 
-    if(this->receiver.joinable()){
-        this->receiver.join();
-    }
+    if(receiver.joinable()) receiver.join();
 
     std::cout << "Network process joined successfully.\n";
 };
 
 network::~network(){
-    this->clean_up();
+    clean_up();
 };

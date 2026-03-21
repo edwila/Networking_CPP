@@ -3,6 +3,7 @@
 
 #include <string>
 #include <any>
+#include <mutex>
 #include <entt/entt.hpp>
 #include <memory>
 #include <thread>
@@ -15,13 +16,14 @@
 
 class Syncer {
 public:
-    explicit Syncer(entt::registry* _world);
+    explicit Syncer(std::shared_ptr<entt::registry> _world);
 
     static uint8_t get_framerate(){
         return framerate;
     };
 
     void clean_up();
+    void kick(uint32_t plr);
     void increment_frame();
     uint64_t get_frame() const;
     entt::registry& get_world();
@@ -63,7 +65,7 @@ public:
     ~Syncer();
 private:
     // buffer protocol: [ENTITY: 4 bytes] [COMP_ID: 4 bytes] [OPCODE: 1 byte] [DATA?: sizeof(COMP_ID)?]
-    std::unique_ptr<entt::registry> world;
+    std::shared_ptr<entt::registry> world;
     uint64_t frame = 0;
     static constexpr uint8_t framerate = 1; // how many times this->update() is called per second
     EventStream buffer;

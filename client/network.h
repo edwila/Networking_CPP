@@ -1,4 +1,5 @@
 #include <vector>
+#include <atomic>
 #include <iostream>
 #include <thread>
 #include <algorithm>
@@ -23,5 +24,5 @@ private:
     std::thread receiver;
     ENetHost* client;
     ENetPeer* peer = nullptr;
-    bool running = false, connected = false;
+    std::atomic<bool> running = false, connected = false;
 };

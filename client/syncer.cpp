@@ -9,11 +9,11 @@ Syncer::Syncer(entt::registry* _world){
 };
 
 Syncer::~Syncer(){
-    this->clean_up();
+    clean_up();
 };
 
 void Syncer::disconnect(){
-    this->net.disconnect();
+    net.disconnect();
 };
 
 void Syncer::connect(){
@@ -25,9 +25,9 @@ void Syncer::connect(){
 };
 
 void Syncer::clean_up(){
-    this->running = false;
-    this->updater.join();
-    this->net.clean_up();
+    running = false;
+    if(updater.joinable()) updater.join();
+    net.clean_up();
 
     std::cout << "Syncer clean up protocol completed. Exiting gracefully.\n";
 

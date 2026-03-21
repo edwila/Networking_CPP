@@ -10,26 +10,40 @@ int main(){
 
     std::string user_entry;
 
+    uint32_t counter = 0;
+
+    entt::entity ent;
+
     while(user_entry != "exit"){
-        std::cout << "Option: ";
+        std::cout << ">> ";
         std::cin >> user_entry;
 
-        if(user_entry == "modify"){
-            std::cout << "Updating world now.\n";
+        if(user_entry == "upd"){
+            if(!syncer.get_world().valid(ent)){
+                ent = syncer.create_entity();
+                syncer.add_tag<Networked>(ent);
+                std::cout << "World was not initialized. Done now!\n";
+            }
 
-            entt::registry& world = syncer.get_world();
+            std::cout << "Updating world counter\n";
 
-            auto other_entity = syncer.create_entity();
+            syncer.get_world().emplace_or_replace<Postation>(ent, counter++);
+        } else if (user_entry == "init"){
+            std::cout << "init'ing world\n";
 
-            auto entity = syncer.create_entity();
+            ent = syncer.create_entity();
+            syncer.add_tag<Networked>(ent);
+        } else if(user_entry == "kick"){
+            uint32_t peer_name;
+            std::cin >> peer_name;
 
-            syncer.add_tag<Networked>(entity);
+            player_list players = syncer.get_players();
+            if(players.find(peer_name) == players.end()){
+                std::cout << "Please provide a valid entity ID for the player to kick.\n";
+                continue;
+            }
 
-            syncer.emplace<Postation, uint32_t>(entity, 0xFFFFFFFF);
-
-            syncer.emplace<Name, std::string>(entity, "Ismail");
-
-            syncer.get_world().emplace_or_replace<Name>(entity, "genscript");
+            syncer.kick(peer_name);
         } else if(user_entry == "playerlist"){
             // print the playerlist
             player_list players = syncer.get_players();

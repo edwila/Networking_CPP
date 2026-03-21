@@ -12,7 +12,7 @@ int main(){
     std::string user_entry;
 
     while(user_entry != "exit"){
-        std::cout << "Option: ";
+        std::cout << ">> ";
         std::cin >> user_entry;
         if(user_entry == "disconnect"){
             syncer.disconnect();
