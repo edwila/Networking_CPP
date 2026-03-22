@@ -60,12 +60,28 @@ void network::process(){
                 if (serviceResult > 0) {
                     switch (event.type) {
                         case ENET_EVENT_TYPE_RECEIVE: {
-                            std::cout << "\nPacket received: " << event.packet->dataLength << " bytes\n";
-                            uint8_t* data_ptr = event.packet->data;
-                            for(size_t i = 0; i < event.packet->dataLength; i++){
-                                std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                            if(event.packet->dataLength > 0){
+                                switch(*(event.packet->data)){
+                                    case 0: {
+                                        std::cout << "\nSync packet received: " << event.packet->dataLength << " bytes\n";
+                                        uint8_t* data_ptr = event.packet->data;
+                                        for(size_t i = 1; i < event.packet->dataLength; i++){
+                                            std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                                        }
+                                        std::cout << "\n>> ";
+                                        break;
+                                    }
+                                    case 1: {
+                                        std::cout << "\nCompleted handshake protocol packet received: " << event.packet->dataLength << "\n";
+                                        uint8_t* data_ptr = event.packet->data;
+                                        for(size_t i = 1; i < event.packet->dataLength; i++){
+                                            std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                                        }
+                                        std::cout << "\n>> ";
+                                        break;
+                                    }
+                                }
                             }
-                            std::cout << "\n>> ";
                             enet_packet_destroy(event.packet);
                             break;
                         }

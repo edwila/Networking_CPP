@@ -95,19 +95,30 @@ struct EventStream {
 
     void write_event(entt::entity& entity, uint32_t comp_id, uint8_t opcode, const void* data = nullptr, size_t data_size = 0, bool use_mutex = false) {
         lock(use_mutex);
+
+        if(this->data.empty()){
+            // Add the 0 header to denote a sync packet
+            this->data.insert(this->data.end(), 0);
+        }
         
+        populate_buffer(this->data, entity, comp_id, opcode, data, data_size);
+        
+        unlock(use_mutex);
+    }
+
+    void populate_buffer(std::vector<uint8_t>& origin, entt::entity& entity, uint32_t comp_id, uint8_t opcode, const void* data = nullptr, size_t data_size = 0) {     
         // write exactly 9 bytes of header
         PacketHeader header = {entt::to_integral(entity), comp_id, opcode};
         const uint8_t* ptr = reinterpret_cast<const uint8_t*>(&header);
-        this->data.insert(this->data.end(), ptr, ptr + sizeof(PacketHeader));
+        //origin.reserve(origin.size()+1);
+        //origin.emplace_back(0); // 0 = sync packet
+        origin.insert(origin.end(), ptr, ptr + sizeof(PacketHeader));
         
         // write optional data
         if (data && data_size > 0) {
             const uint8_t* data_ptr = static_cast<const uint8_t*>(data);
-            this->data.insert(this->data.end(), data_ptr, data_ptr + data_size);
+            origin.insert(origin.end(), data_ptr, data_ptr + data_size);
         }
-        
-        unlock(use_mutex);
     }
 };
 

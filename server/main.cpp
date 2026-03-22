@@ -27,7 +27,8 @@ int main(){
 
             std::cout << "Updating world counter\n";
 
-            syncer.get_world().emplace_or_replace<Postation>(ent, counter++);
+            syncer.get_world().emplace_or_replace<Postation>(ent, counter);
+            syncer.get_world().emplace_or_replace<Name>(ent, std::to_string(counter++));
         } else if (user_entry == "init"){
             std::cout << "init'ing world\n";
 

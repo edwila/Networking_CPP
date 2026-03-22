@@ -18,7 +18,7 @@ int main(){
             syncer.disconnect();
         } else if(user_entry == "connect"){
             std::cin >> user_entry;
-            user_entry = user_entry.length() > 0 ? user_entry : "127.0.0.1";
+            user_entry = user_entry == "local" ? "127.0.0.1" : user_entry;
             syncer.connect(user_entry);
         }
     }

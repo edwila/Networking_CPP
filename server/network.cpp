@@ -23,14 +23,52 @@ void network::disconnect(ENetPeer* peer, uint8_t reason){
 };
 
 void network::process(Syncer* sync){
+    auto& wrld = sync->get_world();
+    auto& buffer = sync->get_buffer();
+
     receiver = std::thread([&, sync](){
         ENetEvent event;
         while(running){
             if(enet_host_service(server, &event, 1000) > 0){
                 switch(event.type){
                 case ENET_EVENT_TYPE_CONNECT: {
-                    // Player connected, create a new Player entity
-                    entt::entity plr = sync->create_entity();
+                    // Player connected, send a snapshot of all networked entities and create a new Player entity
+                    auto view = wrld.view<Networked>();
+                    std::vector<uint8_t> temp_buffer(1, 0);
+                    for(entt::entity ent : view){
+                        // Each entity is networked
+                        // We'll simulate a buffer full of simulated construction packets and send it
+                        // TODO: generalize this + the hook initialization instead of using the hardcoded components
+
+                        if(wrld.all_of<Name>(ent)){
+                            std::vector<uint8_t> payload;
+                            auto name = wrld.get<Name>(ent);
+                            sync->gen_payload(payload, ent, name);
+                            buffer.populate_buffer(temp_buffer, ent, COMP_IDS::COMP_NAME, OpCode::ADDED, payload.data(), payload.size());
+                        }
+
+                        if(wrld.all_of<Postation>(ent)){
+                            std::vector<uint8_t> payload;
+                            auto post = wrld.get<Postation>(ent);
+                            sync->gen_payload(payload, ent, post);
+                            buffer.populate_buffer(temp_buffer, ent, COMP_IDS::COMP_POSTATION, OpCode::ADDED, payload.data(), payload.size());
+                        }
+                    }
+
+                    std::cout << "temp_buffer:\n";
+                    for(auto i : temp_buffer){
+                        std::cout << (int)i << " ";
+                    }
+                    std::cout << "\n";
+
+                    if(temp_buffer.size() > 1){
+                        send(event.peer, temp_buffer);
+                        temp_buffer = {1};
+                        send(event.peer, temp_buffer); // Send 0 to denote handshaking as completed
+                    }
+
+                    entt::entity plr = sync->create_entity(); // Can initialize the entity here with player components
+                    sync->add_tag<Networked>(plr);
                     uint32_t integral = entt::to_integral(plr);
                     client* nc = new client{event.peer->address.host, event.peer->address.port};
                     nc->self = nc;
@@ -64,6 +102,41 @@ void network::process(Syncer* sync){
 std::unordered_map<uint32_t, client*> network::get_players() const {
     return players;
 };
+
+void network::send(ENetPeer* receiver, std::vector<uint8_t>& data_buf_obj){
+    int res = enet_peer_send(receiver, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
+    // todo: 
+    // == 0: success | < 0: error
+}
+
+void network::send(ENetPeer* receiver, EventStream& data_buf_obj, bool use_mutex){
+    if(use_mutex){
+        data_buf_obj.lock();
+    }
+    this->send(receiver, data_buf_obj.data);
+    if(use_mutex){
+        data_buf_obj.unlock();
+    }
+}
+
+void network::send_strict(std::vector<enet_uint32>& targets, std::vector<uint8_t>& data_buf_obj){
+    for(enet_uint32 ent : targets){
+        if(players.count(ent) > 0){
+            // They're an entity we're currently tracking, so it's valid
+            this->send(players[ent]->peer, data_buf_obj);
+        }
+    }
+}
+
+void network::send_strict(std::vector<enet_uint32>& targets, EventStream& data_buf_obj, bool use_mutex){
+    if(use_mutex){
+        data_buf_obj.lock();
+    }
+    this->send_strict(targets, data_buf_obj.data);
+    if(use_mutex){
+        data_buf_obj.unlock();
+    }
+}
 
 void network::send_to_all(std::vector<uint8_t>& data_buf_obj){
     enet_host_broadcast(server, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));

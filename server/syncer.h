@@ -29,6 +29,8 @@ public:
     entt::registry& get_world();
     bool initialized();
 
+    EventStream& get_buffer();
+
     player_list get_players() const;
 
     template <typename T, typename K>
@@ -63,6 +65,25 @@ public:
     bool is_networked(entt::entity e);
     void print_buffer();
     ~Syncer();
+
+    template <typename T>
+    void gen_payload(std::vector<uint8_t>& payload, entt::entity& e, T& comp){
+        // Will fill the payload vector with the data needed to construct a delta packet (prepends with 0 to denote a sync packet)
+        uint8_t* byte_ptr = (uint8_t*)&comp.value;
+        size_t end_range = sizeof(comp.value);
+
+        if constexpr (T::COMP_ID == COMP_IDS::COMP_NAME){
+            const std::string& name = comp.value;
+            uint8_t len = static_cast<uint8_t>(name.length());
+
+            payload.reserve(payload.capacity()+len+1);
+            payload.emplace_back(len);
+            end_range = len;
+            byte_ptr = (uint8_t*)name.data();
+        }
+
+        payload.insert(payload.end(), byte_ptr, byte_ptr+end_range);
+    }
 private:
     // buffer protocol: [ENTITY: 4 bytes] [COMP_ID: 4 bytes] [OPCODE: 1 byte] [DATA?: sizeof(COMP_ID)?]
     std::shared_ptr<entt::registry> world;
@@ -77,19 +98,12 @@ private:
     void con_upd(entt::registry& world, entt::entity e, OpCode op){
         const auto& comp = world.get<T>(e);
 
-        if constexpr (T::COMP_ID == COMP_IDS::COMP_NAME){
-            std::vector<uint8_t> payload;
-            const std::string& name = comp.value;
-            uint8_t len = static_cast<uint8_t>(name.length());
+        std::vector<uint8_t> payload;
+        
+        gen_payload(payload, e, comp);
 
-            payload.reserve(len+1);
-            payload.emplace_back(len);
-            payload.insert(payload.end(), name.begin(), name.end());
-            buffer.write_event(e, T::COMP_ID, op, payload.data(), payload.size(), true);
-        } else{
-            buffer.write_event(e, T::COMP_ID, op, &comp, sizeof(T), true);
-        }
-    }
+        buffer.write_event(e, T::COMP_ID, op, payload.data(), payload.size(), true);
+    };
 
     template <typename T>
     void on_con(entt::registry& world, entt::entity e){

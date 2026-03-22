@@ -32,7 +32,7 @@ struct Name {
         value = str;
     }
 
-    std::string get(){
+    std::string& get(){
         return value;
     }
 
@@ -44,26 +44,26 @@ struct Name {
 };
 
 struct Postation {
-    std::uint32_t packed;
+    std::uint32_t value;
 
     void set(std::uint32_t pos, uint16_t rot){
-        packed = (rot & 0x1FF) | (pos << 9);
+        value = (rot & 0x1FF) | (pos << 9);
     }
 
-    std::uint32_t get(){
-        return packed;
+    std::uint32_t& get(){
+        return value;
     }
 
     uint32_t get_position() const {
-        return (packed >> 9);
+        return (value >> 9);
     }
 
     uint16_t get_rotation() const {
-        return (packed & 0x1FF);
+        return (value & 0x1FF);
     }
 
     size_t get_size() const {
-        return sizeof(packed);
+        return sizeof(value);
     }
 
     static constexpr uint8_t COMP_ID = COMP_IDS::COMP_POSTATION;

@@ -43,6 +43,10 @@ public:
     void process(Syncer* sync);
     void send_to_all(EventStream& data_buf_obj, bool use_mutex = false);
     void send_to_all(std::vector<uint8_t>& data_buf_obj);
+    void send_strict(std::vector<enet_uint32>& targets, EventStream& data_buf_obj, bool use_mutex = false); // send_strict will accept a vector of entity IDs associated with players to send packets strictly to them
+    void send_strict(std::vector<enet_uint32>& targets, std::vector<uint8_t>& data_buf_obj);
+    void send(ENetPeer* receiver, EventStream& data_buf_object, bool use_mutex);
+    void send(ENetPeer* receiver, std::vector<uint8_t>& data_buf_object);
     void clean_up();
     void disconnect(ENetPeer* peer, uint8_t reason = 0);
     player_list get_players() const;

@@ -109,3 +109,7 @@ void Syncer::print_buffer(){
     buffer.out(std::cout);
     std::cout << "frame: " << get_frame() << "\n>> ";
 };
+
+EventStream& Syncer::get_buffer(){
+    return buffer;
+}
