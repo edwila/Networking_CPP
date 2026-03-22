@@ -49,6 +49,11 @@ bool network::is_connected() const {
     return connected;
 };
 
+void network::send(std::vector<uint8_t>& packet){
+    // TODO: change flag based on the key of the packet (packet[0])
+    enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT));
+};
+
 void network::process(){
     receiver = std::thread([this]() {
         ENetEvent event;
@@ -63,7 +68,7 @@ void network::process(){
                             if(event.packet->dataLength > 0){
                                 switch(*(event.packet->data)){
                                     case 0: {
-                                        std::cout << "\nSync packet received: " << event.packet->dataLength << " bytes\n";
+                                        std::cout << "\nSync packet received: " << event.packet->dataLength << " bytes (excluding flag byte)\n";
                                         uint8_t* data_ptr = event.packet->data;
                                         for(size_t i = 1; i < event.packet->dataLength; i++){
                                             std::cout << static_cast<int>(*(data_ptr+i)) << " ";
@@ -74,10 +79,33 @@ void network::process(){
                                     case 1: {
                                         std::cout << "\nCompleted handshake protocol packet received: " << event.packet->dataLength << "\n";
                                         uint8_t* data_ptr = event.packet->data;
-                                        for(size_t i = 1; i < event.packet->dataLength; i++){
+                                        for(size_t i = 0; i < event.packet->dataLength; i++){
                                             std::cout << static_cast<int>(*(data_ptr+i)) << " ";
                                         }
                                         std::cout << "\n>> ";
+                                        break;
+                                    }
+                                    case 2: {
+                                        std::string reason = "";
+                                        uint8_t* data_ptr = event.packet->data;
+                                        for(size_t i = 1; i < event.packet->dataLength; i++){
+                                            reason +=  static_cast<char>(*(data_ptr+i));
+                                        }
+
+                                        std::cout << "\nYou've been kicked from the game: " << reason << "\n";
+                                        disconnect();
+                                        break;
+                                    }
+                                    case 3: {
+                                        uint8_t* data_ptr = event.packet->data;
+                                        uint32_t entity_id;
+                                        std::memcpy(&entity_id, data_ptr + 1, sizeof(uint32_t));
+                                        std::string msg = "";
+                                        for(size_t i = 1+sizeof(uint32_t); i < event.packet->dataLength; i++){
+                                            msg +=  static_cast<char>(*(data_ptr+i));
+                                        }
+
+                                        std::cout << "\n[" << (entity_id & 0xFFFFF) << "]: " << msg << "\n>> ";
                                         break;
                                     }
                                 }
@@ -128,7 +156,7 @@ bool network::is_running() const {
 
 void network::disconnect(){
     if(peer){
-        std::cout << "Ended connection.\n";
+        std::cout << "Ended connection.\n>> ";
         enet_peer_disconnect(peer, 0);
 
         enet_host_flush(client);

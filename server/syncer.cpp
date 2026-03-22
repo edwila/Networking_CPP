@@ -99,8 +99,16 @@ player_list Syncer::get_players() const {
     return net.get_players();
 };
 
-void Syncer::kick(uint32_t plr){
+void Syncer::kick(uint32_t plr, std::string& reason){
     client* data = get_players()[plr];
+
+    std::vector<uint8_t> k_reason = {2};
+
+    uint8_t* start = (uint8_t*)reason.data();
+
+    k_reason.insert(k_reason.end(), start, start+reason.length());
+
+    net.send(data->peer, k_reason);
 
     net.disconnect(data->peer, 1);
 }
@@ -112,4 +120,4 @@ void Syncer::print_buffer(){
 
 EventStream& Syncer::get_buffer(){
     return buffer;
-}
+};

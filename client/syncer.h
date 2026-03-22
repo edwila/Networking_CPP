@@ -40,6 +40,7 @@ public:
     void disconnect();
     void init();
     bool is_networked(entt::entity e);
+    void message(std::string& msg);
     void rem(entt::registry& world, entt::entity e, uint8_t id);
     ~Syncer();
 private:

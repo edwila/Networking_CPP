@@ -19,7 +19,7 @@ network::network() {
 
 void network::disconnect(ENetPeer* peer, uint8_t reason){
     // TODO: add a check where if reason == 1 (kicked), send a packet informing them they are kicked, then actually call enet_peer_disconnect_later(peer, reason)
-    enet_peer_disconnect(peer, reason);
+    enet_peer_disconnect_later(peer, reason);
 };
 
 void network::process(Syncer* sync){
@@ -55,12 +55,6 @@ void network::process(Syncer* sync){
                         }
                     }
 
-                    std::cout << "temp_buffer:\n";
-                    for(auto i : temp_buffer){
-                        std::cout << (int)i << " ";
-                    }
-                    std::cout << "\n";
-
                     if(temp_buffer.size() > 1){
                         send(event.peer, temp_buffer);
                         temp_buffer = {1};
@@ -76,7 +70,7 @@ void network::process(Syncer* sync){
                     event.peer->data = (void*)integral;
                     players[integral] = nc;
                     // Sends a snapshot of the current world here
-                    std::cout << "Player connected! Assigned entity index: " << (integral & 0xFFFFF) << "\n>> ";
+                    std::cout << "Player connected! Assigned entity index: " << (integral & 0xFFFFF) << " (" << integral << ")\n>> ";
                     break;
                 }
                 case ENET_EVENT_TYPE_DISCONNECT: {
@@ -88,6 +82,26 @@ void network::process(Syncer* sync){
                     delete players[entity_id];
                     sync->delete_entity(entity_id);
                     players.erase(entity_id);
+                    break;
+                }
+                case ENET_EVENT_TYPE_RECEIVE: {
+                    if(event.packet->dataLength > 0){
+                            switch(*(event.packet->data)){
+                                case 1: {
+                                    // Chat
+                                    // Do filtering and stuff here
+                                    std::vector<uint8_t> packet_data = {3};
+                                    uint32_t entity_id = (uint32_t)(uintptr_t)event.peer->data;
+
+                                    uint8_t* ptr = (uint8_t*)&entity_id; // The entity ID (enet_uint32)
+                                    packet_data.insert(packet_data.end(), ptr, ptr+(sizeof(enet_uint32)));
+                                    packet_data.insert(packet_data.end(), event.packet->data+1, event.packet->data+event.packet->dataLength);
+                                    send_to_all(packet_data);
+                                    break;
+                                }
+                            }
+                        }
+                        enet_packet_destroy(event.packet);
                     break;
                 }
                 case ENET_EVENT_TYPE_NONE: {

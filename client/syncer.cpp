@@ -16,6 +16,16 @@ void Syncer::disconnect(){
     net.disconnect();
 };
 
+void Syncer::message(std::string& msg){
+    std::vector<uint8_t> cmsg = {1};
+
+    uint8_t* start = (uint8_t*)msg.data();
+
+    cmsg.insert(cmsg.end(), start, start+msg.length());
+
+    net.send(cmsg);
+};
+
 void Syncer::connect(std::string& hostIP){
     if(net.is_connected()){
         std::cout << "Already connected to a server!\n";

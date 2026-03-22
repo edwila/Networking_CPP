@@ -23,7 +23,7 @@ public:
     };
 
     void clean_up();
-    void kick(uint32_t plr);
+    void kick(uint32_t plr, std::string& reason);
     void increment_frame();
     uint64_t get_frame() const;
     entt::registry& get_world();

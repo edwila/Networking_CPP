@@ -37,7 +37,7 @@ int main(){
         } else if(user_entry == "kick"){
             uint32_t peer_name;
             std::cin >> peer_name;
-            std::getline(std::cin, user_entry);
+            std::getline(std::cin >> std::ws, user_entry);
 
             user_entry = user_entry.length() > 0 ? user_entry : "No reason provided.";
 
@@ -49,7 +49,7 @@ int main(){
 
             std::cout << "Kicking " << peer_name << " with reason: " << user_entry << "\n";
 
-            syncer.kick(peer_name);
+            syncer.kick(peer_name, user_entry);
         } else if(user_entry == "playerlist"){
             // print the playerlist
             player_list players = syncer.get_players();

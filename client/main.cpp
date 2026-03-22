@@ -20,6 +20,11 @@ int main(){
             std::cin >> user_entry;
             user_entry = user_entry == "local" ? "127.0.0.1" : user_entry;
             syncer.connect(user_entry);
+        } else if(user_entry == "say"){
+            // Send a message to all other clients
+            std::getline(std::cin >> std::ws, user_entry);
+            // Our message is now in "user_entry", so create a packet and send it
+            syncer.message(user_entry);
         }
     }
 
