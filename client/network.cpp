@@ -39,9 +39,9 @@ void network::connect(std::string& hostIP, int counter){
             enet_peer_reset(peer);
             return;
         }
-        std::cout << "Connection failed. Attempting again... (" << counter << "/" << MAX_ATTEMPTS << ")\n";
+        std::cout << "Connection failed. Attempting again... (" << counter << "/" << (int)MAX_ATTEMPTS << ")\n";
         enet_peer_reset(peer);
-        return connect(hostIP, counter++);
+        return connect(hostIP, ++counter);
     }
 };
 
