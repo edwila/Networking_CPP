@@ -113,6 +113,30 @@ void Syncer::kick(uint32_t plr, std::string& reason){
     net.disconnect(data->peer, 1);
 }
 
+std::vector<uint8_t> Syncer::handshake_snapshot(){
+    auto view = get_world().view<Networked>();
+    std::vector<uint8_t> snapshot(1, 0);
+    for(entt::entity ent : view){
+        // Each entity is networked
+        // We'll simulate a buffer full of simulated construction packets and send it
+        // TODO: generalize this + the hook initialization instead of using the hardcoded compone
+        if(get_world().all_of<Name>(ent)){
+            std::vector<uint8_t> payload;
+            auto name = get_world().get<Name>(ent);
+            gen_payload(payload, ent, name);
+            buffer.populate_buffer(snapshot, ent, COMP_IDS::COMP_NAME, OpCode::ADDED, payload.data(), payload.size());
+        }
+        if(get_world().all_of<Postation>(ent)){
+            std::vector<uint8_t> payload;
+            auto post = get_world().get<Postation>(ent);
+            gen_payload(payload, ent, post);
+            buffer.populate_buffer(snapshot, ent, COMP_IDS::COMP_POSTATION, OpCode::ADDED, payload.data(), payload.size());
+        }
+    }
+
+    return snapshot;
+}
+
 void Syncer::print_buffer(){
     buffer.out(std::cout);
     std::cout << "frame: " << get_frame() << "\n>> ";

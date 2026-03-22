@@ -51,7 +51,11 @@ bool network::is_connected() const {
 
 void network::send(std::vector<uint8_t>& packet){
     // TODO: change flag based on the key of the packet (packet[0])
-    enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT));
+    uint8_t flag = packet[0];
+
+    std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
+
+    enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), FLAGS[flag] ? ENET_PACKET_FLAG_RELIABLE : ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT));
 };
 
 void network::process(){

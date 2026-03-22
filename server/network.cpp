@@ -23,7 +23,6 @@ void network::disconnect(ENetPeer* peer, uint8_t reason){
 };
 
 void network::process(Syncer* sync){
-    auto& wrld = sync->get_world();
     auto& buffer = sync->get_buffer();
 
     receiver = std::thread([&, sync](){
@@ -33,32 +32,12 @@ void network::process(Syncer* sync){
                 switch(event.type){
                 case ENET_EVENT_TYPE_CONNECT: {
                     // Player connected, send a snapshot of all networked entities and create a new Player entity
-                    auto view = wrld.view<Networked>();
-                    std::vector<uint8_t> temp_buffer(1, 0);
-                    for(entt::entity ent : view){
-                        // Each entity is networked
-                        // We'll simulate a buffer full of simulated construction packets and send it
-                        // TODO: generalize this + the hook initialization instead of using the hardcoded components
+                    std::vector<uint8_t> snapshot = sync->handshake_snapshot();
 
-                        if(wrld.all_of<Name>(ent)){
-                            std::vector<uint8_t> payload;
-                            auto name = wrld.get<Name>(ent);
-                            sync->gen_payload(payload, ent, name);
-                            buffer.populate_buffer(temp_buffer, ent, COMP_IDS::COMP_NAME, OpCode::ADDED, payload.data(), payload.size());
-                        }
-
-                        if(wrld.all_of<Postation>(ent)){
-                            std::vector<uint8_t> payload;
-                            auto post = wrld.get<Postation>(ent);
-                            sync->gen_payload(payload, ent, post);
-                            buffer.populate_buffer(temp_buffer, ent, COMP_IDS::COMP_POSTATION, OpCode::ADDED, payload.data(), payload.size());
-                        }
-                    }
-
-                    if(temp_buffer.size() > 1){
-                        send(event.peer, temp_buffer);
-                        temp_buffer = {1};
-                        send(event.peer, temp_buffer); // Send 0 to denote handshaking as completed
+                    if(snapshot.size() > 1){
+                        send(event.peer, snapshot);
+                        snapshot = {1};
+                        send(event.peer, snapshot); // Send 0 to denote handshaking as completed
                     }
 
                     entt::entity plr = sync->create_entity(); // Can initialize the entity here with player components
@@ -118,6 +97,10 @@ std::unordered_map<uint32_t, client*> network::get_players() const {
 };
 
 void network::send(ENetPeer* receiver, std::vector<uint8_t>& data_buf_obj){
+    uint8_t flag = data_buf_obj[0];
+
+    std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
+
     int res = enet_peer_send(receiver, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
     // todo: 
     // == 0: success | < 0: error

@@ -2,12 +2,22 @@
 #include <atomic>
 #include <iostream>
 #include <thread>
+#include <bitset>
 #include <algorithm>
 #include "../shared/enet.h"
 #include "../shared/entt/components.h"
 
 constexpr static uint16_t PORT = 6767;
 constexpr static uint8_t MAX_ATTEMPTS = 3;
+
+/*
+FLAGS indices:
+0 - 
+1 - 
+2 - 
+3 - Chat
+*/
+constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 
 class network {
 public:

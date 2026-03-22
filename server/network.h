@@ -4,6 +4,7 @@
 #include "../shared/packets.h"
 #include <vector>
 #include <atomic>
+#include <bitset>
 #include <unordered_map>
 #include <iostream>
 #include <thread>
@@ -12,6 +13,15 @@
 
 constexpr static uint32_t PORT = 6767;
 constexpr static uint8_t MAX_PLAYERS = 10;
+
+/*
+FLAGS indices:
+0 - 
+1 - Chat
+2 - 
+3 - Chat
+*/
+constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 
 class Syncer;
 

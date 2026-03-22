@@ -22,6 +22,8 @@ public:
         return framerate;
     };
 
+    std::vector<uint8_t> handshake_snapshot();
+
     void clean_up();
     void kick(uint32_t plr, std::string& reason);
     void increment_frame();
