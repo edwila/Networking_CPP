@@ -136,6 +136,10 @@ void network::send_strict(std::vector<enet_uint32>& targets, EventStream& data_b
 }
 
 void network::send_to_all(std::vector<uint8_t>& data_buf_obj){
+    uint8_t flag = data_buf_obj[0];
+
+    std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
+    
     enet_host_broadcast(server, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
 };
 

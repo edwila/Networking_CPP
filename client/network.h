@@ -13,9 +13,9 @@ constexpr static uint8_t MAX_ATTEMPTS = 3;
 /*
 FLAGS indices:
 0 - 
-1 - 
+1 - Chat
 2 - 
-3 - Chat
+3 - 
 */
 constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 

@@ -16,12 +16,12 @@ constexpr static uint8_t MAX_PLAYERS = 10;
 
 /*
 FLAGS indices:
-0 - 
-1 - Chat
-2 - 
+0 - Syncing
+1 - Completed handshake protocol alert
+2 - Kicking a player
 3 - Chat
 */
-constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
+constexpr static std::bitset<4> FLAGS(0b1111); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 
 class Syncer;
 
@@ -31,18 +31,6 @@ struct client {
     enet_uint16 port;
     client* self;
     ENetPeer* peer;
-};
-
-// Struct to contain information about being kicked. Can be templated for different types of disconnects, leaving this as-is for simplicity
-struct dc_packet {
-    uint8_t dtype; // disconnection type
-
-    void* metadata; // will be cast to the specific packet depending on dtype 
-    size_t metadata_len;
-};
-
-struct kick_packet {
-    std::string reason;
 };
 
 typedef std::unordered_map<uint32_t, client*> player_list;
