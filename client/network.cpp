@@ -24,7 +24,9 @@ void network::connect(std::string& hostIP, int counter){
     enet_address_set_host(&addy, hostIP.data());
     addy.port = PORT;
 
-    peer = enet_host_connect(client, &addy, 2, 0);
+    std::cout << "Connecting to: " << hostIP << "\n";
+
+    peer = enet_host_connect(client, &addy, 2, 0); // TODO: send data instead of 0 (playerid, etc.)
     assert(peer != NULL);
     
     ENetEvent event;
@@ -35,7 +37,7 @@ void network::connect(std::string& hostIP, int counter){
         connected = true;
     } else {
         if(counter > MAX_ATTEMPTS){
-            std::cout << "Attempted to establish connection to " << hostIP << counter << " times. Please check your network and try again.\n";
+            std::cout << "Attempted to establish connection to " << hostIP << " " << counter << " times. Please check your network and try again.\n";
             enet_peer_reset(peer);
             return;
         }
@@ -97,7 +99,6 @@ void network::process(){
                                         }
 
                                         std::cout << "\nYou've been kicked from the game: " << reason << "\n";
-                                        disconnect();
                                         break;
                                     }
                                     case 3: {
@@ -127,7 +128,7 @@ void network::process(){
                                     break;
                                 }
                                 case 1: {
-                                    std::cout << "\nYou've been kicked from the game!\n>> ";
+                                    std::cout << "\nDisconnected.\n>> ";
                                     break;
                                 }
                             }
@@ -143,6 +144,7 @@ void network::process(){
                     std::cout << "Error with ENet service.\n";
                     //running = false;
                 }
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             } else {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
@@ -161,12 +163,7 @@ bool network::is_running() const {
 void network::disconnect(){
     if(peer){
         std::cout << "Ended connection.\n>> ";
-        enet_peer_disconnect(peer, 0);
-
-        enet_host_flush(client);
-
-        peer = nullptr;
-        connected = false;
+        enet_peer_disconnect(peer, 0); // TODO: Disconnection data here
     }
 };
 

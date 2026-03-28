@@ -11,13 +11,13 @@ constexpr static uint16_t PORT = 6767;
 constexpr static uint8_t MAX_ATTEMPTS = 3;
 
 /*
-FLAGS indices:
+FLAGS indices (right -> left):
 0 - UNUSED
 1 - Chat
 2 - UNUSED
 3 - UNUSED
 */
-constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
+constexpr static std::bitset<4> FLAGS(0b0010); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 
 class network {
 public:

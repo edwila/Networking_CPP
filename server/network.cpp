@@ -17,8 +17,14 @@ network::network() {
     std::cout << "Server started.\n";
 };
 
-void network::disconnect(ENetPeer* peer, uint8_t reason){
+void network::disconnect(ENetPeer* peer, uint8_t reason, const std::string& msg){
     // TODO: add a check where if reason == 1 (kicked), send a packet informing them they are kicked, then actually call enet_peer_disconnect_later(peer, reason)
+    if(reason == 1 && !msg.empty()){
+        std::vector<uint8_t> packet = {2};
+        packet.insert(packet.end(), msg.begin(), msg.end());
+
+        send(peer, packet);
+    }
     enet_peer_disconnect_later(peer, reason);
 };
 
@@ -69,6 +75,12 @@ void network::process(Syncer* sync){
                                 case 1: {
                                     // Chat
                                     // Do filtering and stuff here
+                                    // text is in event.packet->data+1 up to event.packet->dataLength
+                                    for(size_t L = 1; L < event.packet->dataLength; L++){
+                                        // 1 because 0 is the flag
+                                        std::cout << (char)(*(event.packet->data+L));
+                                    }
+                                    std::cout << "\n";
                                     std::vector<uint8_t> packet_data = {3};
                                     uint32_t entity_id = (uint32_t)(uintptr_t)event.peer->data;
 

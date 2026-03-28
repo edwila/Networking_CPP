@@ -15,13 +15,13 @@ constexpr static uint32_t PORT = 6767;
 constexpr static uint8_t MAX_PLAYERS = 10;
 
 /*
-FLAGS indices:
+FLAGS indices (right -> left):
 0 - Syncing
 1 - Completed handshake protocol alert
 2 - Kicking a player
 3 - Chat
 */
-constexpr static std::bitset<4> FLAGS(0b1111); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
+constexpr static std::bitset<4> FLAGS(0b1110); // TODO: Adjust these as needed (for different flags). 0 = UNRELIABLE, 1 = RELIABLE
 
 class Syncer;
 
@@ -46,7 +46,7 @@ public:
     void send(ENetPeer* receiver, EventStream& data_buf_object, bool use_mutex);
     void send(ENetPeer* receiver, std::vector<uint8_t>& data_buf_object);
     void clean_up();
-    void disconnect(ENetPeer* peer, uint8_t reason = 0);
+    void disconnect(ENetPeer* peer, uint8_t reason = 0, const std::string& msg = "");
     player_list get_players() const;
     ~network();
 private:
