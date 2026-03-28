@@ -58,12 +58,12 @@ int main(){
 
             for(auto const& entry : players){
                 char str_addr[INET6_ADDRSTRLEN];
-                client* c = (client*)entry.second;
+                client* c = entry.second;
 
-                if(inet_ntop(AF_INET6, &(c->host), str_addr, INET6_ADDRSTRLEN) != nullptr){
+                if(inet_ntop(AF_INET, &(c->host), str_addr, INET_ADDRSTRLEN) != nullptr){
                     std::cout << "[" << entry.first << "]: " << str_addr << "\n";
                 } else{
-                    std::cout << "[" << entry.first << "]: " << entry.second << "\n";
+                    std::cout << "[" << entry.first << "]: " << c << "\n";
                 }
             }
         }
