@@ -11,6 +11,14 @@ network::network() {
     std::cout << "Client started.\n";
 };
 
+void network::heartbeat() {
+    // If connected, send a heartbeat ping to the server
+    if(is_connected()){
+        std::vector<uint8_t> hb_packet = {0};
+        send(hb_packet);
+    }
+}
+
 void network::init(){
     running = true;
 
@@ -55,7 +63,7 @@ void network::send(std::vector<uint8_t>& packet){
     // TODO: change flag based on the key of the packet (packet[0])
     uint8_t flag = packet[0];
 
-    std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
+    //std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n>> ";
 
     enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), FLAGS[flag] ? ENET_PACKET_FLAG_RELIABLE : ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT));
 };
@@ -64,8 +72,8 @@ void network::process(){
     receiver = std::thread([this]() {
         ENetEvent event;
 
-        while (running) {
-            if(connected){
+        while (is_running()) {
+            if(is_connected()){
                 int serviceResult = enet_host_service(client, &event, 1000);
 
                 if (serviceResult > 0) {
@@ -144,13 +152,21 @@ void network::process(){
                     std::cout << "Error with ENet service.\n";
                     //running = false;
                 }
+
+                std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+
+                if(std::chrono::duration_cast<std::chrono::milliseconds>(now - last_hb) >= std::chrono::milliseconds(HB_TICKRATE)){
+                    // Send a heartbeat ping
+                    heartbeat();
+                    last_hb = now;
+                }
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             } else {
                 std::this_thread::sleep_for(std::chrono::milliseconds(50));
             }
         }
 
-        if(connected){
+        if(is_connected()){
             disconnect();
         }
     });

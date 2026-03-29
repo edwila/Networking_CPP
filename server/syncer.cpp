@@ -95,7 +95,7 @@ bool Syncer::is_networked(entt::entity e){
     return world->all_of<Networked>(e);
 };
 
-player_list Syncer::get_players() const {
+player_list Syncer::get_players(){
     return net.get_players();
 };
 

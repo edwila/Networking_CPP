@@ -14,18 +14,18 @@ add_library(shared_lib INTERFACE)
 target_include_directories(shared_lib INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/shared)
 
 # 3. Define the executables
-add_executable(syncer_server ${SERVER_SOURCES})
-add_executable(syncer_client ${CLIENT_SOURCES})
+add_executable(server ${SERVER_SOURCES})
+add_executable(client ${CLIENT_SOURCES})
 
 # 4. Link everything together
 if(WIN32)
     # Link shared_lib (which contains EnTT) and the Windows networking libraries
     set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static -static-libgcc -static-libstdc++")
 
-    target_link_libraries(syncer_server PRIVATE shared_lib ws2_32 winmm)
-    target_link_libraries(syncer_client PRIVATE shared_lib ws2_32 winmm)
+    target_link_libraries(server PRIVATE shared_lib ws2_32 winmm)
+    target_link_libraries(client PRIVATE shared_lib ws2_32 winmm)
 else()
     # If on Linux/WSL, just link the shared headers
-    target_link_libraries(syncer_server PRIVATE shared_lib)
-    target_link_libraries(syncer_client PRIVATE shared_lib)
+    target_link_libraries(server PRIVATE shared_lib)
+    target_link_libraries(client PRIVATE shared_lib)
 endif()

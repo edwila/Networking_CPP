@@ -33,7 +33,7 @@ public:
 
     EventStream& get_buffer();
 
-    player_list get_players() const;
+    player_list get_players();
 
     template <typename T, typename K>
     void emplace(const entt::entity& e, const K& value){
