@@ -6,6 +6,7 @@
 #include <algorithm>
 #include "../shared/enet.h"
 #include "../shared/entt/components.h"
+#include "../shared/util.h"
 
 
 class network {

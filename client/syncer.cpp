@@ -28,7 +28,7 @@ void Syncer::message(std::string& msg){
 
 void Syncer::connect(std::string& hostIP){
     if(net.is_connected()){
-        std::cout << "Already connected to a server!\n";
+        out("Already connected to a server!");
     } else{
         net.connect(hostIP);
     }
@@ -39,7 +39,7 @@ void Syncer::clean_up(){
     if(updater.joinable()) updater.join();
     net.clean_up();
 
-    std::cout << "Syncer clean up protocol completed. Exiting gracefully.\n";
+    out("Syncer clean up protocol completed. Exiting gracefully...");
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
 };
@@ -68,7 +68,7 @@ entt::entity Syncer::create_entity(){
 
 void Syncer::init(){
     // Create a new ENet connection and listen for stuff
-    std::cout << "Client init.\n";
+    out("Client init.");
 
     net.process();
 };
@@ -94,7 +94,7 @@ void Syncer::rem(entt::registry& world, entt::entity e, uint8_t id){
             break;
         }
         default: {
-            std::cout << "Unknown COMP_ID when removing.\n";
+            out("Unknown COMP_ID when removing.");
             break;
         }
     }

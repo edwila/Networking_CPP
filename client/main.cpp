@@ -3,16 +3,13 @@
 
 
 int main(){
-    std::cout << "CLIENT!\n";
-
     Syncer syncer(nullptr);
 
     syncer.init();
 
     std::string user_entry;
 
-    while(user_entry != "exit"){
-        std::cout << ">> ";
+    while(user_entry != "exit"){        
         std::cin >> user_entry;
         if(user_entry == "disconnect"){
             syncer.disconnect();

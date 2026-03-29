@@ -15,22 +15,21 @@ int main(){
     entt::entity ent;
 
     while(user_entry != "exit"){
-        std::cout << ">> ";
         std::cin >> user_entry;
 
         if(user_entry == "upd"){
             if(!syncer.get_world().valid(ent)){
                 ent = syncer.create_entity();
                 syncer.add_tag<Networked>(ent);
-                std::cout << "World was not initialized. Done now!\n";
+                out("World was not initialized. Initialized!");
             }
 
-            std::cout << "Updating world counter\n";
+            out("Updating world counter...");
 
             syncer.get_world().emplace_or_replace<Postation>(ent, counter);
             syncer.get_world().emplace_or_replace<Name>(ent, std::to_string(counter++));
         } else if (user_entry == "init"){
-            std::cout << "init'ing world\n";
+            out("Initializing world...");
 
             ent = syncer.create_entity();
             syncer.add_tag<Networked>(ent);
@@ -43,27 +42,26 @@ int main(){
 
             player_list players = syncer.get_players();
             if(players.find(peer_name) == players.end()){
-                std::cout << "Please provide a valid entity ID for the player to kick.\n";
+                out("Please provide a valid entity ID for the player to kick.");
                 continue;
             }
 
-            std::cout << "Kicking " << peer_name << " with reason: " << user_entry << "\n";
+            out("Kicking ", peer_name, " with reason: ", user_entry);
 
             syncer.kick(peer_name, user_entry);
         } else if(user_entry == "playerlist"){
             // print the playerlist
             player_list players = syncer.get_players();
 
-            std::cout << "Player list:\n";
+            out("Player list:");
 
-            for(auto const& entry : players){
+            for(auto const& [k, c] : players){
                 char str_addr[INET6_ADDRSTRLEN];
-                client* c = entry.second;
 
                 if(inet_ntop(AF_INET6, &(c->host), str_addr, INET6_ADDRSTRLEN) != nullptr){
-                    std::cout << "[" << entry.first << "]: " << str_addr << "\n";
+                    out("[", k, "]: ", str_addr);
                 } else{
-                    std::cout << "[" << entry.first << "]: " << c << "\n";
+                    out("[", k, "]: ", c);
                 }
             }
         }

@@ -14,7 +14,7 @@ network::network() {
     assert(server != NULL);
 
     running = true;
-    std::cout << "Server started.\n";
+    out("Server started.");
 };
 
 void network::disconnect(ENetPeer* peer, uint8_t reason, const std::string& msg){
@@ -32,21 +32,21 @@ void network::check_hbs(const std::chrono::steady_clock::time_point& now, Syncer
     for(auto plr = players.begin(); plr != players.end();){
         client* c = plr->second;
         const uint32_t& e_id = plr->first;
-
-        //std::cout << "State: " << c->peer->state << "\n>> ";
+        
+        // out("State: ", c->peer->state);
 
         if(c->peer->state == ENET_PEER_STATE_DISCONNECTED) {
-            std::cout << "[CLEANUP] Player [" << entt::to_entity(e_id) << "] had an ungraceful disconnect. Cleaning up...\n>> ";
+            out("[CLEANUP] Player [", entt::to_entity(e_id), "] had an ungraceful disconnect. Cleaning up...");
             delete c;
             sync->delete_entity(e_id);
             plr = players.erase(plr);
-            std::cout << "Player " << entt::to_entity(e_id) << " left!\n>> ";
+            out("Player ", entt::to_entity(e_id), " left!");
             continue;
         } else if(c->peer->state == ENET_PEER_STATE_CONNECTED){
             std::chrono::milliseconds dur = std::chrono::duration_cast<std::chrono::milliseconds>(now-c->heartbeat);
 
             if(dur >= std::chrono::milliseconds(MAX_HB)){
-                std::cout << "Player [" << entt::to_entity(e_id) << "] has not pinged with a heartbeat for " << dur.count() << " ms. Forcing a disconnect.\n>> ";
+                out("Player [", entt::to_entity(e_id), "] has not pinged with a heartbeat for ", dur.count(), "ms. Disconnecting peer...");
                 disconnect(c->peer, 1, "Lost connection: heartbeat ping not received.");
             }
         }
@@ -86,17 +86,17 @@ void network::process(Syncer* sync){
                         event.peer->data = (void*)(uintptr_t)integral;
                         players[integral] = nc;
                         // Sends a snapshot of the current world here
-                        std::cout << "Player connected! Assigned entity index: " << entt::to_entity(integral) << " (" << integral << ")\n>> ";
+                        out("Player connected! Assigned entity index: ", entt::to_entity(integral), " (", integral, ")");
                         break;
                     }
                     case ENET_EVENT_TYPE_DISCONNECT: {
                         uint32_t entity_id = (uint32_t)(uintptr_t)event.peer->data;
                         if(players.find(entity_id) == players.end()) {
-                            std::cout << "[ERROR] Ghost Player! Entity " << entity_id << " disconnected but wasn't found in the map!\n";
+                            out("Ghost Player! Entity ", entity_id, " disconnected but not in map.");
                             break; // It bails out here and never erases them!
                         }
 
-                        std::cout << "Player " << entt::to_entity(entity_id) << " left!\n>> ";
+                        out("Player ", entt::to_entity(entity_id), " left!");
 
                         delete players[entity_id];
                         sync->delete_entity(entity_id);
@@ -113,11 +113,11 @@ void network::process(Syncer* sync){
 
                                         if(current_client == nullptr){
                                             // Do something here, idk
-                                            std::cout << "Attempted to get a heartbeat from non-existant entity! Returning...\n";
+                                            out("Attempted to get a heartbeat from non-existant entity! Returning...");
                                             return;
                                         }
 
-                                        //std::cout << "Entity " << (e_id & 0xFFFFF) << " heartbeat.\n>> ";
+                                        //out("Entity ", (e_id & 0xFFFFF), " heartbeat.");
 
                                         current_client->heartbeat = std::chrono::steady_clock::now();
                                         break;
@@ -126,11 +126,9 @@ void network::process(Syncer* sync){
                                         // Chat
                                         // Do filtering and stuff here
                                         // text is in event.packet->data+1 up to event.packet->dataLength
-                                        for(size_t L = 1; L < event.packet->dataLength; L++){
-                                            // 1 because 0 is the flag
-                                            std::cout << (char)(*(event.packet->data+L));
-                                        }
-                                        std::cout << "\n";
+                                        std::string msg(reinterpret_cast<char*>(event.packet->data + 1), event.packet->dataLength - 1);
+                                        out(msg);
+
                                         std::vector<uint8_t> packet_data = {3};
                                         uint32_t entity_id = (uint32_t)(uintptr_t)event.peer->data;
 
@@ -168,9 +166,9 @@ std::unordered_map<uint32_t, client*>& network::get_players(){
 void network::send(ENetPeer* receiver, std::vector<uint8_t>& data_buf_obj){
     uint8_t flag = data_buf_obj[0];
 
-    //std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
+    //out("Flag: ", (int)flag, " sending as ", (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE"));
 
-    int res = enet_peer_send(receiver, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
+    int res = enet_peer_send(receiver, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), FLAGS[flag] ? ENET_PACKET_FLAG_RELIABLE : ENET_PACKET_FLAG_UNSEQUENCED));
     // todo: 
     // == 0: success | < 0: error
 }
@@ -207,8 +205,7 @@ void network::send_strict(std::vector<enet_uint32>& targets, EventStream& data_b
 void network::send_to_all(std::vector<uint8_t>& data_buf_obj){
     uint8_t flag = data_buf_obj[0];
 
-    //std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n";
-    
+    //out("Flag: ", (int)flag, " sending as ", (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE"));
     enet_host_broadcast(server, 0, enet_packet_create((void*)data_buf_obj.data(), data_buf_obj.size(), ENET_PACKET_FLAG_RELIABLE));
 };
 
@@ -233,7 +230,7 @@ void network::clean_up(){
     }
     enet_deinitialize();
 
-    std::cout << "Network process joined successfully.\n";
+    out("Network process joined successfully.");
 };
 
 network::~network(){

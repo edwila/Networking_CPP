@@ -8,7 +8,7 @@ network::network() {
 
     init();
 
-    std::cout << "Client started.\n";
+    out("Client started.");
 };
 
 void network::heartbeat() {
@@ -32,7 +32,7 @@ void network::connect(std::string& hostIP, int counter){
     enet_address_set_host(&addy, hostIP.data());
     addy.port = PORT;
 
-    std::cout << "Connecting to: " << hostIP << "\n";
+    out("Connecting to ", hostIP);
 
     peer = enet_host_connect(client, &addy, 2, 0); // TODO: send data instead of 0 (playerid, etc.)
     assert(peer != NULL);
@@ -40,16 +40,16 @@ void network::connect(std::string& hostIP, int counter){
     ENetEvent event;
                 
     if (enet_host_service(client, &event, 5000) > 0 &&
-    event.type == ENET_EVENT_TYPE_CONNECT) {            
-        std::cout << "Connection successful.\n";
+    event.type == ENET_EVENT_TYPE_CONNECT) { 
+        out("Connection successful.");           
         connected = true;
     } else {
         if(counter > MAX_ATTEMPTS){
-            std::cout << "Attempted to establish connection to " << hostIP << " " << counter << " times. Please check your network and try again.\n";
+            out("Attempted to establish connection to ", hostIP, " ", counter, " times. Please check your network and try again.");
             enet_peer_reset(peer);
             return;
         }
-        std::cout << "Connection failed. Attempting again... (" << counter << "/" << (int)MAX_ATTEMPTS << ")\n";
+        out("Connection failed. Attempting again... (", counter, "/", (int)MAX_ATTEMPTS, ")");
         enet_peer_reset(peer);
         return connect(hostIP, ++counter);
     }
@@ -63,9 +63,9 @@ void network::send(std::vector<uint8_t>& packet){
     // TODO: change flag based on the key of the packet (packet[0])
     uint8_t flag = packet[0];
 
-    //std::cout << "Flag: " << (int)flag << " sending as " << (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE") << "\n>> ";
+    //out("Flag: ", (int)flag, " sending as ", (FLAGS[flag] ? "RELIABLE" : "UNRELIABLE"));
 
-    enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), FLAGS[flag] ? ENET_PACKET_FLAG_RELIABLE : ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT));
+    enet_peer_send(peer, 0, enet_packet_create((void*)packet.data(), packet.size(), FLAGS[flag] ? ENET_PACKET_FLAG_RELIABLE : ENET_PACKET_FLAG_UNSEQUENCED));
 };
 
 void network::process(){
@@ -82,21 +82,25 @@ void network::process(){
                             if(event.packet->dataLength > 0){
                                 switch(*(event.packet->data)){
                                     case 0: {
-                                        std::cout << "\nSync packet received: " << event.packet->dataLength << " bytes (excluding flag byte)\n";
+                                        out("Sync packet received: ", event.packet->dataLength, " bytes (excluding flag byte)");
                                         uint8_t* data_ptr = event.packet->data;
+                                        std::string congregate = "";
                                         for(size_t i = 1; i < event.packet->dataLength; i++){
-                                            std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                                            congregate += std::to_string(static_cast<int>(*(data_ptr+i)));
+                                            congregate += ' ';
                                         }
-                                        std::cout << "\n>> ";
+                                        out(congregate);
                                         break;
                                     }
                                     case 1: {
-                                        std::cout << "\nCompleted handshake protocol packet received: " << event.packet->dataLength << "\n";
+                                        out("Completed handshake protocol packet received!");
                                         uint8_t* data_ptr = event.packet->data;
+                                        std::string congregate = "";
                                         for(size_t i = 0; i < event.packet->dataLength; i++){
-                                            std::cout << static_cast<int>(*(data_ptr+i)) << " ";
+                                            congregate += std::to_string(static_cast<int>(*(data_ptr+i)));
+                                            congregate += ' ';
                                         }
-                                        std::cout << "\n>> ";
+                                        out(congregate);
                                         break;
                                     }
                                     case 2: {
@@ -106,7 +110,7 @@ void network::process(){
                                             reason +=  static_cast<char>(*(data_ptr+i));
                                         }
 
-                                        std::cout << "\nYou've been kicked from the game: " << reason << "\n";
+                                        out("You've been kicked from the game: ", reason);
                                         break;
                                     }
                                     case 3: {
@@ -118,7 +122,7 @@ void network::process(){
                                             msg +=  static_cast<char>(*(data_ptr+i));
                                         }
 
-                                        std::cout << "\n[" << (entity_id & 0xFFFFF) << "]: " << msg << "\n>> ";
+                                        out("[", entt::to_entity(entity_id), "]: ", msg);
                                         break;
                                     }
                                 }
@@ -131,12 +135,12 @@ void network::process(){
                             switch (dc_type) {
                                 default:
                                 case 0: {
-                                    std::cout << "\nLost connection to the server...\n>> ";
+                                    out("Lost connection to the server...");
                                     // todo: attempt reconnection here
                                     break;
                                 }
                                 case 1: {
-                                    std::cout << "\nDisconnected.\n>> ";
+                                    out("Disconnected.");
                                     break;
                                 }
                             }
@@ -149,7 +153,7 @@ void network::process(){
                         }
                     }
                 } else if (serviceResult < 0) {
-                    std::cout << "Error with ENet service.\n";
+                    out("Error with ENet service.");
                     //running = false;
                 }
 
@@ -178,7 +182,7 @@ bool network::is_running() const {
 
 void network::disconnect(){
     if(peer){
-        std::cout << "Ended connection.\n>> ";
+        out("Ended connection.");
         enet_peer_disconnect(peer, 0); // TODO: Disconnection data here
     }
 };
@@ -194,7 +198,7 @@ void network::clean_up(){
     }
     enet_deinitialize();
 
-    std::cout << "Network process joined successfully.\n";
+    out("Network process joined successfully.");
 };
 
 network::~network(){

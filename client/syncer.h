@@ -11,6 +11,7 @@
 #include <chrono>
 #include "../shared/entt/components.h"
 #include "./network.h"
+#include "../shared/util.h"
 
 class Syncer {
 public:

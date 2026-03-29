@@ -16,7 +16,7 @@ void Syncer::clean_up(){
     if(listener.joinable()) listener.join();
     net.clean_up();
 
-    std::cout << "Syncer clean up protocol completed. Exiting gracefully.\n";
+    out("Syncer clean up protocol completed. Exiting gracefully...");
 
     std::this_thread::sleep_for(std::chrono::seconds(5));
 };
@@ -139,7 +139,7 @@ std::vector<uint8_t> Syncer::handshake_snapshot(){
 
 void Syncer::print_buffer(){
     buffer.out(std::cout);
-    std::cout << "frame: " << get_frame() << "\n>> ";
+    out("frame: ", get_frame());
 };
 
 EventStream& Syncer::get_buffer(){

@@ -10,6 +10,7 @@
 #include <thread>
 #include <algorithm>
 #include "../shared/enet.h"
+#include "../shared/util.h"
 
 
 class Syncer;
