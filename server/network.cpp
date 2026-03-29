@@ -125,16 +125,33 @@ void network::process(Syncer* sync){
                                     case 1: {
                                         // Chat
                                         // Do filtering and stuff here
+                                        /*
+
+                                        Note on filtering:
+                                        While the implementation here is EXTREMELY basic (std::string::find), a more proprietary
+                                        filtering method is typically used (i.e., for code I am not allowed to share, vectorization
+                                        was the approach employed). Alternatively, you can optimize look-up algorithm to find
+                                        substrings within the chat message to filter it.
+
+                                        */
                                         // text is in event.packet->data+1 up to event.packet->dataLength
                                         std::string msg(reinterpret_cast<char*>(event.packet->data + 1), event.packet->dataLength - 1);
-                                        out(msg);
+                                        
+                                        out("Original message: ", msg);
+
+                                        // Replace message if ' kachow ' is found
+
+                                        if(msg.find("kachow") != std::string::npos){
+                                            msg = "[Content Removed]";
+                                            out("Filtered message: ", msg);
+                                        }
 
                                         std::vector<uint8_t> packet_data = {3};
                                         uint32_t entity_id = (uint32_t)(uintptr_t)event.peer->data;
 
                                         uint8_t* ptr = (uint8_t*)&entity_id; // The entity ID (enet_uint32)
                                         packet_data.insert(packet_data.end(), ptr, ptr+(sizeof(enet_uint32)));
-                                        packet_data.insert(packet_data.end(), event.packet->data+1, event.packet->data+event.packet->dataLength);
+                                        packet_data.insert(packet_data.end(), msg.begin(), msg.end());
                                         send_to_all(packet_data);
                                         break;
                                     }
